@@ -253,6 +253,7 @@ def experiment(
             scheduler=scheduler,
             loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.mean((a_hat - a)**2),
             eval_fns=[eval_episodes(tar) for tar in env_targets],
+            save_path=variant['save_path'],
         )
     elif model_type == 'bc':
         trainer = ActTrainer(
@@ -263,6 +264,7 @@ def experiment(
             scheduler=scheduler,
             loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.mean((a_hat - a)**2),
             eval_fns=[eval_episodes(tar) for tar in env_targets],
+            save_path=variant['save_path'],
         )
 
     if log_to_wandb:
@@ -272,7 +274,7 @@ def experiment(
             project='decision-transformer',
             config=variant
         )
-        # wandb.watch(model)  # wandb has some bug
+        wandb.watch(model, log="all", log_freq=100)  # log="all" to log gradients and parameters, log_freq to set logging frequency
 
     for iter in range(variant['max_iters']):
         outputs = trainer.train_iteration(num_steps=variant['num_steps_per_iter'], iter_num=iter+1, print_logs=True)
@@ -302,6 +304,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_steps_per_iter', type=int, default=10000)
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--log_to_wandb', '-w', type=bool, default=False)
+    parser.add_argument('--save_path', type=str, default='model')
     
     args = parser.parse_args()
 

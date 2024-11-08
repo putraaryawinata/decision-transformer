@@ -6,7 +6,7 @@ import time
 
 class Trainer:
 
-    def __init__(self, model, optimizer, batch_size, get_batch, loss_fn, scheduler=None, eval_fns=None):
+    def __init__(self, model, optimizer, batch_size, get_batch, loss_fn, scheduler=None, eval_fns=None, save_path='model'):
         self.model = model
         self.optimizer = optimizer
         self.batch_size = batch_size
@@ -17,6 +17,7 @@ class Trainer:
         self.diagnostics = dict()
 
         self.start_time = time.time()
+        self.save_path = save_path
 
     def train_iteration(self, num_steps, iter_num=0, print_logs=False):
 
@@ -56,6 +57,7 @@ class Trainer:
             for k, v in logs.items():
                 print(f'{k}: {v}')
 
+        self.save_model(f'{self.save_path}_iter_{iter_num}.pth')
         return logs
 
     def train_step(self):
@@ -76,3 +78,6 @@ class Trainer:
         self.optimizer.step()
 
         return loss.detach().cpu().item()
+
+    def save_model(self, file_path):
+        torch.save(self.model.state_dict(), file_path)
