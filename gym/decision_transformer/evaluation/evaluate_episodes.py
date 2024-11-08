@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+from tqdm import tqdm
 
 def evaluate_episode(
         env,
@@ -32,7 +32,7 @@ def evaluate_episode(
     sim_states = []
 
     episode_return, episode_length = 0, 0
-    for t in range(max_ep_len):
+    for t in tqdm(range(max_ep_len), desc="Evaluate episode"):
 
         # add padding
         actions = torch.cat([actions, torch.zeros((1, act_dim), device=device)], dim=0)
@@ -99,7 +99,7 @@ def evaluate_episode_rtg(
     sim_states = []
 
     episode_return, episode_length = 0, 0
-    for t in range(max_ep_len):
+    for t in tqdm(range(max_ep_len), desc="Evaluate episode"):
 
         # add padding
         actions = torch.cat([actions, torch.zeros((1, act_dim), device=device)], dim=0)

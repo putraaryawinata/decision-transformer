@@ -3,7 +3,7 @@ import torch
 
 import time
 import os
-
+from tqdm import tqdm
 
 class Trainer:
 
@@ -28,7 +28,7 @@ class Trainer:
         train_start = time.time()
 
         self.model.train()
-        for _ in range(num_steps):
+        for _ in tqdm(range(num_steps)):
             train_loss = self.train_step()
             train_losses.append(train_loss)
             if self.scheduler is not None:
