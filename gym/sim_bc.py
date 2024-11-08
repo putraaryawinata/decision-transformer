@@ -1,0 +1,108 @@
+import gym
+import numpy as np
+import torch
+from decision_transformer.models.mlp_bc import MLPBCModel
+from decision_transformer.models.decision_transformer import DecisionTransformer
+from tqdm import tqdm
+
+if __name__ == "__main__":
+    # Example usage
+    env = gym.make('Hopper-v3')
+    state_dim = env.observation_space.shape[0]
+    act_dim = env.action_space.shape[0]
+    scale = 1000.0  # Normalization for rewards/returns
+    model_type = 'bc'  # Model type: 'bc' or 'dt'
+    TARGET_RETURN = 3600 /scale
+    max_ep_len = 1000  # Maximum episode length
+    device = 'cuda'  # Device to run the model on
+
+    model_path = '/home/arya/Documents/decision-transformer/gym/bc/med_iter_10.pth'
+    model = MLPBCModel(
+        state_dim=state_dim,
+        act_dim=act_dim,
+        max_length=20, # K
+        hidden_size=128, # embed_dim
+        n_layer=6, # n_layer
+    )
+
+    state_mean = np.array(
+        [
+            1.311279,
+            -0.08469521,
+            -0.5382719,
+            -0.07201576,
+            0.04932366,
+            2.1066856,
+            -0.15017354,
+            0.00878345,
+            -0.2848186,
+            -0.18540096,
+            -0.28461286,
+        ]
+    )
+    state_std = np.array(
+        [
+            0.17790751,
+            0.05444621,
+            0.21297139,
+            0.14530419,
+            0.6124444,
+            0.85174465,
+            1.4515252,
+            0.6751696,
+            1.536239,
+            1.6160746,
+            5.6072536,
+        ]
+    )
+    state_mean = torch.from_numpy(state_mean).to(device=device)
+    state_std = torch.from_numpy(state_std).to(device=device)
+
+    state_dict = torch.load(model_path, map_location=torch.device(device))  # Load the model state dictionary
+    model.load_state_dict(state_dict)  # Load the state dictionary into the model
+    model.to(torch.device(device))  # Move the model to GPU
+    model.eval()  # Set the model to evaluation mode
+    
+    for ep in range(10):
+        episode_return, episode_length = 0, 0
+        state = env.reset()
+        target_return = torch.tensor(TARGET_RETURN, device=device, dtype=torch.float32).reshape(1, 1)
+        states = torch.from_numpy(state).reshape(1, state_dim).to(device=device, dtype=torch.float32)
+        actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
+        rewards = torch.zeros(0, device=device, dtype=torch.float32)
+
+        timesteps = torch.tensor(0, device=device, dtype=torch.long).reshape(1, 1)
+        
+
+        for t in tqdm(range(max_ep_len), desc="Simulation Progress"):
+            env.render()  # Render the environment
+            # add padding
+            actions = torch.cat([actions, torch.zeros((1, act_dim), device=device)], dim=0)
+            rewards = torch.cat([rewards, torch.zeros(1, device=device)])
+
+            action = model.get_action(
+                # model,
+                (states.to(dtype=torch.float32) - state_mean) / state_std,
+                actions.to(dtype=torch.float32),
+                rewards.to(dtype=torch.float32),
+            )
+            
+            actions[-1] = action
+            action = action.detach().cpu().numpy()
+
+            state, reward, done, _ = env.step(action)
+
+            cur_state = torch.from_numpy(state).to(device=device).reshape(1, state_dim)
+            states = torch.cat([states, cur_state], dim=0)
+            rewards[-1] = reward
+
+            pred_return = target_return[0, -1] - (reward / scale)
+            target_return = torch.cat([target_return, pred_return.reshape(1, 1)], dim=1)
+            timesteps = torch.cat([timesteps, torch.ones((1, 1), device=device, dtype=torch.long) * (t + 1)], dim=1)
+
+
+            episode_return += reward
+            episode_length += 1
+            
+            if done:
+                break
