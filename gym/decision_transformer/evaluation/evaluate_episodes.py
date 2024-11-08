@@ -31,7 +31,7 @@ def evaluate_episode(
     sim_states = []
 
     episode_return, episode_length = 0, 0
-    for t in tqdm(range(max_ep_len), desc="Evaluate episode"):
+    for t in range(max_ep_len):
 
         # add padding
         actions = torch.cat([actions, torch.zeros((1, act_dim), device=device)], dim=0)
