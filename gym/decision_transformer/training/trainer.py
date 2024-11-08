@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 import time
+import os
 
 
 class Trainer:
@@ -80,4 +81,6 @@ class Trainer:
         return loss.detach().cpu().item()
 
     def save_model(self, file_path):
+        if not os.path.exists(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
         torch.save(self.model.state_dict(), file_path)
