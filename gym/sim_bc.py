@@ -4,25 +4,34 @@ import torch
 from decision_transformer.models.mlp_bc import MLPBCModel
 from decision_transformer.models.decision_transformer import DecisionTransformer
 from tqdm import tqdm
+import argparse
 
 if __name__ == "__main__":
-    # Example usage
-    env = gym.make('Hopper-v3')
+    
+    parser = argparse.ArgumentParser(description="Simulation parameters")
+    parser.add_argument('--env', type=str, default='Hopper-v3', help='Gym environment name')
+    parser.add_argument('--device', type=str, default='cuda', help='Device to run the model on')
+    parser.add_argument('--model_path', type=str, help='Path to the model file')
+
+    args = parser.parse_args()
+    print(f"Environment: {args.env}")
+    print(f"Device: {args.device}")
+    print(f"Model Path: {args.model_path}")
+
+    env = gym.make(args.env)
     state_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
     scale = 1000.0  # Normalization for rewards/returns
-    model_type = 'bc'  # Model type: 'bc' or 'dt'
-    TARGET_RETURN = 3600 /scale
+    TARGET_RETURN = 3600 / scale
     max_ep_len = 1000  # Maximum episode length
-    device = 'cuda'  # Device to run the model on
+    device = args.device  # Device to run the model on
 
-    model_path = '/home/arya/Documents/decision-transformer/gym/bc/med_iter_10.pth'
     model = MLPBCModel(
         state_dim=state_dim,
         act_dim=act_dim,
         max_length=20, # K
         hidden_size=128, # embed_dim
-        n_layer=6, # n_layer
+        n_layer=3, # n_layer
     )
 
     state_mean = np.array(
@@ -57,7 +66,8 @@ if __name__ == "__main__":
     )
     state_mean = torch.from_numpy(state_mean).to(device=device)
     state_std = torch.from_numpy(state_std).to(device=device)
-
+    
+    model_path = args.model_path
     state_dict = torch.load(model_path, map_location=torch.device(device))  # Load the model state dictionary
     model.load_state_dict(state_dict)  # Load the state dictionary into the model
     model.to(torch.device(device))  # Move the model to GPU

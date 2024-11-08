@@ -8,7 +8,7 @@ Follow the instructions in the [mujoco-py repo](https://github.com/openai/mujoco
 Then, dependencies can be installed with the following command:
 
 ```
-conda env create -f conda_env.yml
+conda env create -f conda_env.yml # It is updated from the original repo, please check your dependencies!
 ```
 
 ## Downloading datasets
@@ -21,7 +21,7 @@ Then, run the following script in order to download the datasets and save them i
 python download_d4rl_datasets.py
 ```
 
-## Example usage
+## Experiment usage
 
 Experiments can be reproduced with the following:
 
@@ -30,3 +30,11 @@ python experiment.py --env hopper --dataset medium --model_type dt
 ```
 
 Adding `-w True` will log results to Weights and Biases.
+
+## Simulation usage
+
+Experiments can be reproduced with the following:
+
+```
+python sim_dt.py --env Hopper-v3 --device cpu --model_path [PATH TO THE MODEL]
+```

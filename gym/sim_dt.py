@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from mujoco_py import GlfwContext
 from tqdm import tqdm
-import cv2
+import argparse
 
 # from transformers import DecisionTransformerModel
 from decision_transformer.models.decision_transformer import DecisionTransformer
@@ -13,11 +13,23 @@ GlfwContext(offscreen=True)  # Create a window to init GLFW.
 
 # build the environment
 if __name__ == "__main__":
-    env = gym.make("Hopper-v3")
+
+    parser = argparse.ArgumentParser(description="Simulation parameters")
+    parser.add_argument('--env', type=str, default='Hopper-v3', help='Gym environment name')
+    parser.add_argument('--device', type=str, default='cuda', help='Device to run the model on')
+    parser.add_argument('--model_path', type=str, help='Path to the model file')
+
+    args = parser.parse_args()
+
+    print(f"Environment: {args.env}")
+    print(f"Device: {args.device}")
+    print(f"Model Path: {args.model_path}")
+
+    env = gym.make(args.env)
     state_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
     max_ep_len = 1000
-    device = "cuda"
+    device = args.device
     scale = 1000.0  # normalization for rewards/returns
     TARGET_RETURN = 3600 / scale  # evaluation conditioning targets, 3600 is reasonable from the paper LINK
     state_mean = np.array(
@@ -53,12 +65,7 @@ if __name__ == "__main__":
     state_mean = torch.from_numpy(state_mean).to(device=device)
     state_std = torch.from_numpy(state_std).to(device=device)
 
-    # # Create the decision transformer model
-    # model = DecisionTransformerModel.from_pretrained("edbeeching/decision-transformer-gym-hopper-medium")
-    # model = model.to(device)
-    # model.eval()
-
-    model_path = "./dt/medium_iter_10.pth"
+    model_path = args.model_path
     state_dict = torch.load(model_path, map_location=torch.device(device))
     model = DecisionTransformer(
         state_dim=state_dim,
