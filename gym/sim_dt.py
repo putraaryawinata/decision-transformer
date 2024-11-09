@@ -52,7 +52,7 @@ if __name__ == "__main__":
                               0.38373196, 0.7373677, 1.2387927, 0.7980206, 1.5664079, 1.8092705,
                               3.0256042, 4.062486, 1.4586568, 3.744569, 5.585129])
     else:
-        raise ValueError(f"Unsupported environment: {args.env}")
+        raise ValueError(f"Unsupported environment: {args.env}. Please select one from: Hopper-v3, HalfCheetah-v3, Walker2d-v3")
     state_mean = torch.from_numpy(state_mean).to(device=device)
     state_std = torch.from_numpy(state_std).to(device=device)
 
